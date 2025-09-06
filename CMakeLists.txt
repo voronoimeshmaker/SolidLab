@@ -1,12 +1,22 @@
 # ------------------------------------------------------------
-# CMake minimum version
+# CMake minimum version + policies
 # ------------------------------------------------------------
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
+# Evita warning do FetchContent (CMP0135) ao extrair arquivos
+if(POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+endif()
+
+
 
 # ------------------------------------------------------------
-# Project
+# Project (ESSENCIAL: precisa existir no CMake raiz)
 # ------------------------------------------------------------
 project(SolidLab VERSION 1.0 LANGUAGES CXX)
+
+# Debug: mostre claramente qual CMakeLists é o raiz
+message(STATUS "[Root] Source dir = ${CMAKE_SOURCE_DIR}")
+message(STATUS "[Root] Binary dir = ${CMAKE_BINARY_DIR}")
 
 # ------------------------------------------------------------
 # C++ standard
@@ -18,8 +28,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Options
 # ------------------------------------------------------------
 option(BUILD_DOCUMENTATION "Build Doxygen and Sphinx documentation" OFF)
-option(BUILD_EXAMPLES      "Build examples"                             ON)
-option(BUILD_TESTS         "Build tests"                                OFF)
+option(BUILD_EXAMPLES      "Build examples"                             OFF)
+option(BUILD_TESTS         "Build tests"                                ON)
 
 # ------------------------------------------------------------
 # Default build type (Release if not specified)
@@ -183,16 +193,27 @@ endif()
 # ------------------------------------------------------------
 if(BUILD_EXAMPLES)
     message(STATUS "Building Examples...")
-#    add_subdirectory(examples)
+    add_subdirectory(examples)
 endif()
 
 # ------------------------------------------------------------
-# Tests (GoogleTest)
+# Tests (GoogleTest via FetchContent)  <<<<<< CORREÇÃO AQUI
 # ------------------------------------------------------------
 if(BUILD_TESTS)
     message(STATUS "Building Tests...")
-    find_package(GTest REQUIRED)
+    include(CTest)
     enable_testing()
+
+    include(FetchContent)
+    FetchContent_Declare(
+      googletest
+      URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+    )
+    # Para MSVC multi-config (Visual Studio)
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+
+    # Agora os targets GTest::gtest e GTest::gtest_main existem
     add_subdirectory(tests)
 endif()
 
